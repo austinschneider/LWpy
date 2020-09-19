@@ -5,3 +5,5 @@ from .block import block_equal
 from .generator import generator
 from .generator import volume_generator
 from .generator import ranged_generator
+from .interactions import interaction
+from .interactions import interactions
