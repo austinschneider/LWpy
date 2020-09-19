@@ -1,3 +1,5 @@
+import numpy as np
+
 class interaction:
     def __init__(self, name, particle, final_state, differential_xs, total_xs):
         self.name = name
