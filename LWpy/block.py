@@ -33,10 +33,19 @@ def block_merge(block_0, block_1):
     return s0, d
 
 def block_equal(block_0, block_1):
-    s0, d0 = block_0
-    s1, d1 = block_1
+    s0, v0, d0 = block_0
+    s1, v1, d1 = block_1
+    if v0 != v1:
+        return False
     if s0 != s1:
         return False
+    if s0 == "VolumeInjectionConfiguration" or s0 == "RangedInjectionConfiguration":
+        pass
+    elif s0 == "EnumDef":
+        name0, d0 = d0
+        name1, d1 = d1
+        if name0 != name1:
+            return False
     k_d0 = list(d0.keys())
     k_d1 = list(d1.keys())
     if len(k_d0) != len(k_d1):
