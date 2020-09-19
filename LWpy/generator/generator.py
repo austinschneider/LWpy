@@ -1,7 +1,12 @@
+import numpy as np
+import photospline
+
 class generator:
     def __init__(self, block):
-        self.block_type = block[0]
-        self.block = block[1]
+        block_name, block_version, block_data = block
+        self.block_type = block_name
+        self.block_version = block_version
+        self.block = block_data
         self.total_xs = photospline.SplineTable(self.block["totalCrossSection"])
         self.differential_xs = photospline.SplineTable(self.block["differentialCrossSection"])
         self.Na = 6.022140857e+23
