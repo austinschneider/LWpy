@@ -1,11 +1,13 @@
 from .generator import generator
 import numpy as np
+import functools
 import EarthModelService
 import LeptonInjector
 
 class ranged_generator(generator):
-    def __init__(self, block):
+    def __init__(self, block, earth_model_params=None):
         generator.__init__(self, block)
+        self.earthModel = EarthModelService.EarthModelService(*earth_model_params)
 
     @staticmethod
     @np.vectorize
@@ -52,10 +54,6 @@ class ranged_generator(generator):
         p_area = 1.0 / (np.pi * radius * radius)
         p_area /= 1e4 # Convert from m^-2 to cm^-2
         return p_area
-
-    def prob_pos(self, events):
-        length = self.get_chord_length(events)
-        return 1.0/length
 
     def prob_pos(self, events):
         def print_pos(pos):
