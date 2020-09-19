@@ -9,7 +9,7 @@ class GeneratorTests(unittest.TestCase):
     def test_earth_model_init(self):
         earth_model_params = [
             "DUNE",
-            "../../LeptonInjectorDUNE/resources/earthparams/",
+            "../resources/earthparams/",
             ["PREM_dune"],
             ["Standard"],
             "NoIce",

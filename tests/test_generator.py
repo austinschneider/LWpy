@@ -20,7 +20,7 @@ class GeneratorTests(unittest.TestCase):
         blocks = s.read()
         earth_model_params = [
             "DUNE",
-            "../../LeptonInjectorDUNE/resources/earthparams/",
+            "../resources/earthparams/",
             ["PREM_dune"],
             ["Standard"],
             "NoIce",
