@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='LWpy',
-      version='0.1',
+      version='0.0.0',
       description='Module for weighting LeptonInjector simulation',
       url='https://github.com/austinschneider/LWpy',
       author='Austin Schneider',
