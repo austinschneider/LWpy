@@ -4,7 +4,9 @@ import hashlib
 
 class read_stream:
     def __init__(self, fname, spline_dir='./'):
-        self.data = open(fname, 'rb').read()
+        f = open(fname, 'rb')
+        self.data = f.read()
+        f.close()
         self.spline_dir = spline_dir
         self.pos = 0
         self.size_size = 8
@@ -93,7 +95,9 @@ class read_stream:
             check = False
             name = os.path.join(self.spline_dir, name)
             if os.path.isfile(name):
-                check_data = open(name, 'rb').read()
+                f = open(name, 'rb')
+                check_data = f.read()
+                f.close()
                 check_hash = hashlib.sha512(data).hexdigest()
                 check = x_hash == check_hash
             if not check:
