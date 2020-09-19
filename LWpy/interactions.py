@@ -1,3 +1,4 @@
+from .spline import spline_repo
 import numpy as np
 
 class interaction:
@@ -5,10 +6,10 @@ class interaction:
         self.name = name
         self.differential_xs = differential_xs
         self.total_xs = total_xs
-        self.particles = particles
-        self.final_state = set(final_state)
-        self.signature = (particle, final_state)
-        self.key = (name, particle, final_state)
+        self.particle = particle
+        self.final_state = tuple(sorted(final_state))
+        self.signature = (self.particle, self.final_state)
+        self.key = (self.name, self.particle, self.final_state)
 
     @classmethod
     def eval_spline(spline, coords, grad=None):
@@ -48,11 +49,9 @@ class interaction:
 
 
 class interactions:
-    def __init__(self, interactions_list=None):
+    def __init__(self, interactions_list):
         self.interactions = interactions_list
-        if self.interactions is None:
-            self.interactions = []
-        signatures = [interaction.signature for interaction in interactions]
+        signatures = [i.signature for i in self.interactions]
         assert(len(set(signatures)) == len(signatures))
         self.interactions_by_particle = dict()
         self.interactions_by_final_state = dict()
@@ -61,30 +60,30 @@ class interactions:
         self.interactions_by_name = dict()
         self.interactions_by_key = dict()
 
-        for interaction in self.interactions:
-            particle = interaction.particle
-            final_state = interaction.final_state
-            signature = interaction.signature
-            name = interaction.name
-            key = interaction.key
+        for i in self.interactions:
+            particle = i.particle
+            final_state = i.final_state
+            signature = i.signature
+            name = i.name
+            key = i.key
 
             if particle not in self.interactions_by_particle:
                 self.interactions_by_particle[particle] = []
-            self.interactions_by_particle[particle].append(interaction)
+            self.interactions_by_particle[particle].append(i)
 
             if final_state not in self.interactions_by_final_state:
                 self.interactions_by_final_state[final_state] = []
-            self.interactions_by_final_state[final_state].append(interaction)
+            self.interactions_by_final_state[final_state].append(i)
 
             if signature not in self.interactions_by_signature:
                 self.interactions_by_signature[signature] = []
-            self.interactions_by_signature[signature].append()
+            self.interactions_by_signature[signature].append(i)
 
             if name not in self.interactions_by_name:
                 self.interactions_by_name[name] = []
-            self.interactions_by_name[name].append()
+            self.interactions_by_name[name].append(i)
 
-            self.interactions_by_key[key] = interaction
+            self.interactions_by_key[key] = i
 
     def get_particle_interactions(self, particle):
         if particle in self.interactions_by_particle:
