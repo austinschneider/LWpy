@@ -141,8 +141,9 @@ class read_stream:
 
 
 class write_stream:
-    def __init__(self, spline_dir='./'):
-        self.data = []
+    def __init__(self, fname, spline_dir='./'):
+        self.fname = fname
+        self.data = bytearray(0)
         self.spline_dir = spline_dir
         self.pos = 0
         self.size_size = 8
@@ -152,7 +153,7 @@ class write_stream:
         self.particle_size = 4
 
     def write_bin(self, data):
-        self.data.insert(self.pos, data)
+        self.data = self.data[:self.pos] + data + self.data[self.pos:]
         n = len(data)
         self.pos += n
         return n
@@ -168,8 +169,11 @@ class write_stream:
             e = '>'
         else:
             e = ''
-        data = struct.pack(e+'f', val)[0]
-        return self.write_bin(data)
+        fmt = e + 'f'
+        n = struct.calcsize(fmt)
+        buf = bytearray(n)
+        struct.pack_into(fmt, buf, 0, val)
+        return self.write_bin(buf)
 
     def write_double(self, val, endian='little', signed=True):
         if endian == 'little':
@@ -178,8 +182,11 @@ class write_stream:
             e = '>'
         else:
             e = ''
-        data = struct.pack(e+'d', val)[0]
-        return self.write_bin(data)
+        fmt = e + 'd'
+        n = struct.calcsize(fmt)
+        buf = bytearray(n)
+        struct.pack_into(fmt, buf, 0, val)
+        return self.write_bin(buf)
 
     def write_string(self, val, endian='little', signed=False):
         n = self.write_int(len(val), self.size_size, signed=signed)
@@ -212,7 +219,7 @@ class write_stream:
         enum_names = sorted(enum.keys())
         enum_vals = [enum[s] for s in enum_names]
         for enum_name, enum_val in zip(enum_names, enum_vals):
-            n += self.write_int(enum_v, 8, signed=True)
+            n += self.write_int(enum_val, 8, signed=True)
             n += self.write_string(enum_name)
         return n
 
@@ -233,10 +240,10 @@ class write_stream:
         radius = block["radius"]
         height = block["height"]
 
-        xs_data = open(totalCrossSection, 'rb').read()
-        txs_data = open(differentialCrossSection, 'rb').read()
-        xs_size = len(xs_data)
+        txs_data = open(totalCrossSection, 'rb').read()
+        xs_data = open(differentialCrossSection, 'rb').read()
         txs_size = len(txs_data)
+        xs_size = len(xs_data)
 
         xs_hash = hashlib.sha512(xs_data).hexdigest()
         xs_name = xs_hash + '.fits'
@@ -269,7 +276,6 @@ class write_stream:
 
     def write(self, blocks):
         n = 0
-        blocks = []
         for block in blocks:
             block_name, block_vesion, block_data = block
             if block_name == 'EnumDef':
@@ -281,4 +287,7 @@ class write_stream:
             else:
                 raise ValueError("Unrecognized block! " + block_name)
             pass
+        f = open(self.fname, 'wb')
+        f.write(bytes(self.data))
+        f.close()
         return n

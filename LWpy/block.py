@@ -46,8 +46,8 @@ def block_equal(block_0, block_1):
         name1, d1 = d1
         if name0 != name1:
             return False
-    k_d0 = list(d0.keys())
-    k_d1 = list(d1.keys())
+    k_d0 = sorted(list(d0.keys()))
+    k_d1 = sorted(list(d1.keys()))
     if len(k_d0) != len(k_d1):
         return False
     keys = np.unique(k_d0 + k_d1)
