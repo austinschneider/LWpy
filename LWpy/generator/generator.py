@@ -23,35 +23,40 @@ class generator:
 
         events = np.asarray(events)
         res = np.zeros(len(events))
-        nonzero = np.logical_and(events.energy >= energy_min, events.energy <= energy_max)
+        energy = events["energy"]
+        nonzero = np.logical_and(energy >= energy_min, energy <= energy_max)
 
         if index != 1:
             norm = (1.0-index) / (energy_max**(1.0-index) - energy_min**(1.0-index))
         elif index == 1:
             norm = 1.0 / np.log(energy_max/energy_min)
-        res[nonzero] = norm * events[nonzero].energy ** (-index)
+        res[nonzero] = norm * energy[nonzero] ** (-index)
         return res
 
     def prob_dir(self, events):
         events = np.asarray(events)
-        res = np.zeros(events.shape)
+        res = np.zeros(len(events))
+        zenith = events["zenith"]
+        azimuth = events["azimuth"]
         nonzero = functools.reduce(np.logical_and,
                 [
-                events.zenith >= zenith_min,
-                events.zenith <= zenith_max,
-                events.azimuth >= azimuth_min,
-                events.azimuth <= azimuth_max,
+                zenith >= zenith_min,
+                zenith <= zenith_max,
+                azimuth >= azimuth_min,
+                azimuth <= azimuth_max,
                 ])
         res[nonzero] = 1.0/((azimuth_maz-azimuth_min)*(np.cos(zenith_min)-np.cos(zenith_max)))
         return res
 
     def prob_final_state(self, events):
         events = np.asarray(events)
+        final_state_0 = events["final_state_0"]
+        final_state_1 = events["final_state_1"]
         return np.logical_or(
-            np.logical_and(events.final_state_0 == self.block["final_state_0"],
-                           events.final_state_1 == self.block["final_state_1"]),
-            np.logical_and(events.final_state_0 == self.block["final_state_1"],
-                           events.final_state_1 == self.block["final_state_0"])
+            np.logical_and(final_state_0 == self.block["final_state_0"],
+                           final_state_1 == self.block["final_state_1"]),
+            np.logical_and(final_state_0 == self.block["final_state_1"],
+                           final_state_1 == self.block["final_state_0"])
             )
 
     def prob_area(self, events):
@@ -62,15 +67,15 @@ class generator:
 
     def prob_interaction(self, events):
         events = np.asarray(events)
-        energy = events.energy
-        x = events.byorken_x
-        y = events.byorken_y
+        energy = events["energy"]
+        x = events["byorken_x"]
+        y = events["byorken_y"]
         coords = np.array([energy, x, y])
         return differential_xs.evaluate_simple(coords, 0)
 
     def number_of_targets(self, events):
         events = np.asarray(events)
-        return self.Na * events.total_column_depth
+        return self.Na * events["total_column_depth"]
 
     def probability(self, events):
         p = self.probability_e(events)

@@ -33,8 +33,8 @@ class volume_generator(generator):
         cz1 = -1*self.block["height"]/2.0
         cz2 = -1*cz1
 
-        zenith = events.zenith
-        azimuth = events.azimuth
+        zenith = events["zenith"]
+        azimuth = events["azimuth"]
 
         nx = np.cos(azimuth)*np.sin(zenith)
         ny = np.sin(azimuth)*np.sin(zenith)
@@ -48,9 +48,9 @@ class volume_generator(generator):
         ny = ny[nonzero]
         nz = nz[nonzero]
 
-        x = events.x[nonzero]
-        y = events.y[nonzero]
-        z = events.z[nonzero]
+        x = events["x"][nonzero]
+        y = events["y"][nonzero]
+        z = events["z"][nonzero]
 
         zenith = zenith[nonzero]
         azimuth = azimuth[nonzero]

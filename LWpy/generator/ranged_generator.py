@@ -59,7 +59,7 @@ class ranged_generator(generator):
         def print_pos(pos):
             print(pos.GetX(), pos.GetY(), pos.GetZ())
 
-        energy = events.energy
+        energy = events["energy"]
         isTau = ((self.block.final_type_1 == LeptonInjector.Particle.ParticleType.TauMinus
                  or self.block.final_type_1 == LeptonInjector.Particle.ParticleType.TauPlus)
                  or (self.block.final_type_2 == LeptonInjector.Particle.ParticleType.TauMinus
@@ -69,13 +69,13 @@ class ranged_generator(generator):
             self.block["final_type_1"],
             self.block["final_type_2"])
 
-        position = np.array([LeptonInjector.LI_Position(x, y, z) for x,y,z in zip(events.x, events.y, events.z)])
-        direction = np.array([LeptonInjector.LI_Direction(zenith, azimuth) in zenith,azimuth in zip(events.zenith, events.azimuth)])
+        position = np.array([LeptonInjector.LI_Position(x, y, z) for x,y,z in zip(events["x"], events["y"], events["z"])])
+        direction = np.array([LeptonInjector.LI_Direction(zenith, azimuth) in zenith,azimuth in zip(events["zenith"], events["azimuth"])])
         endcapLength = self.block["length"] * LeptonInjector.Constants.meter
 
         pca = self.get_pca(direction, position)
 
-        lepton_range = MWEtoColumnDepthCGS(GetLeptonRange(events.energy, isTau=isTau))
+        lepton_range = MWEtoColumnDepthCGS(GetLeptonRange(energy, isTau=isTau))
         endcap_range = earthModel.GetColumnDepthInCGS(
                 pca - endcapLength*direction,
                 pca + endcapLength*direction,

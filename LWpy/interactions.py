@@ -98,3 +98,4 @@ class interactions:
     def get_interaction(self, name, particle, final_state):
         key = (name, particle, set(final_state))
         return self.interactions_by_key[key]
+
