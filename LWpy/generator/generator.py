@@ -71,7 +71,7 @@ class generator:
         x = events["byorken_x"]
         y = events["byorken_y"]
         coords = np.array([energy, x, y])
-        return differential_xs.evaluate_simple(coords, 0)
+        return self.differential_xs.evaluate_simple(coords, 0)
 
     def number_of_targets(self, events):
         events = np.asarray(events)
