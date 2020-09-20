@@ -31,8 +31,7 @@ class InteractionTests(unittest.TestCase):
         nu_interactions_list = standard_interactions.get_standard_interactions()
         nu_interactions = LWpy.interactions(nu_interactions_list)
         ints = nu_interactions.get_particle_interactions(LeptonInjector.Particle.ParticleType.NuEBar)
-        for i in ints:
-            print(i.name)
+        print([i.name for i in ints])
 
 #    def get_particle_interactions(self, particle):
 #        if particle in self.interactions_by_particle:
