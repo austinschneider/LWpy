@@ -129,15 +129,15 @@ class interaction_model(interactions, earth):
 
         for event in events:
             energy = event["energy"]
-            x = event["byorken_x"]
-            y = event["byorken_y"]
+            x = event["bjorken_x"]
+            y = event["bjorken_y"]
             coords = np.array([energy, x, y])
 
 
         self.get_interactions()
         energy = events["energy"]
-        x = events["byorken_x"]
-        y = events["byorken_y"]
+        x = events["bjorken_x"]
+        y = events["bjorken_y"]
         coords = np.array([energy, x, y])
         return differential_xs.evaluate_simple(coords, 0)
 

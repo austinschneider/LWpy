@@ -68,8 +68,8 @@ class generator:
     def prob_interaction(self, events):
         events = np.asarray(events)
         energy = events["energy"]
-        x = events["byorken_x"]
-        y = events["byorken_y"]
+        x = events["bjorken_x"]
+        y = events["bjorken_y"]
         coords = np.array([energy, x, y])
         return self.differential_xs.evaluate_simple(coords, 0)
 
