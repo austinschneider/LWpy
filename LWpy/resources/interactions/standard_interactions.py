@@ -2,6 +2,7 @@ from context import LWpy
 import LeptonInjector
 import pathlib
 path = str(pathlib.Path(__file__).parent.absolute())
+path += '/'
 
 def get_standard_interactions():
     name = "CC"
@@ -9,6 +10,7 @@ def get_standard_interactions():
     final_state = []
     final_state.append(LeptonInjector.Particle.ParticleType.EPlus)
     final_state.append(LeptonInjector.Particle.ParticleType.Hadrons)
+
     cc_nu_differential_xs = path + "../crosssections/csms_differential_v1.0/dsdxdy_nu_CC_iso.fits"
     cc_nu_total_xs = path + "../crosssections/csms_differential_v1.0/sigma_nu_CC_iso.fits"
     nc_nu_differential_xs = path + "../crosssections/csms_differential_v1.0/dsdxdy_nu_NC_iso.fits"
@@ -27,12 +29,12 @@ def get_standard_interactions():
             LeptonInjector.Particle.ParticleType.NuTauBar,
             ]
     charged_leptons = [
-            LeptonInjector.Particle.ParticleType.EPlus,
-            LeptonInjector.Particle.ParticleType.MuPlus,
-            LeptonInjector.Particle.ParticleType.TauPlus,
             LeptonInjector.Particle.ParticleType.EMinus,
             LeptonInjector.Particle.ParticleType.MuMinus,
             LeptonInjector.Particle.ParticleType.TauMinus,
+            LeptonInjector.Particle.ParticleType.EPlus,
+            LeptonInjector.Particle.ParticleType.MuPlus,
+            LeptonInjector.Particle.ParticleType.TauPlus,
             ]
     cc_total_xs = [cc_nu_total_xs]*3 +[cc_nubar_total_xs]*3
     nc_total_xs = [nc_nu_total_xs]*3 +[nc_nubar_total_xs]*3
@@ -49,6 +51,5 @@ def get_standard_interactions():
 
         interactions_list.extend([cc, nc])
 
-    standard_interactions = LWpy.interactions(interactions_list)
-    return standard_interactions
+    return interactions_list
 

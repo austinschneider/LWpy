@@ -12,7 +12,6 @@ class ranged_generator(generator, earth):
 
     def prob_area(self, events):
         events = np.asarray(events)
-        length = self.chord_length(events)
         radius = self.block["radius"]
         p_area = 1.0 / (np.pi * radius * radius)
         p_area /= 1e4 # Convert from m^-2 to cm^-2

@@ -1,4 +1,5 @@
 from context import LWpy
+from context import standard_interactions
 import unittest
 import LeptonInjector
 import numpy as np
@@ -7,7 +8,7 @@ import h5py as h5
 class EventTests(unittest.TestCase):
     """Basic test cases."""
 
-    def test_ranged_generator_init(self):
+    def test_ranged_generator(self):
         s = LWpy.read_stream('./config_DUNE.lic')
         blocks = s.read()
         earth_model_params = [
@@ -46,7 +47,14 @@ class EventTests(unittest.TestCase):
             a = [props[n] for n in names]
             a += [np.zeros(len(props)), np.zeros(len(props))]
             props = np.array(list(zip(*a)), dtype=formats)
-            print(gen.prob_pos(props))
+            gen.prob_pos(props)
+            gen.prob_area(props)
+            gen.get_considered_range(props)
+
+        nu_interactions_list = standard_interactions.get_standard_interactions()
+        int_model = LWpy.interaction_model(nu_interactions_list, earth_model_params)
+        int_model.prob_kinematics(props)
+
 
 if __name__ == '__main__':
     unittest.main()

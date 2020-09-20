@@ -1,3 +1,4 @@
+from ..spline import spline_repo, eval_spline
 import numpy as np
 import photospline
 
@@ -7,8 +8,8 @@ class generator:
         self.block_type = block_name
         self.block_version = block_version
         self.block = block_data
-        self.total_xs = photospline.SplineTable(self.block["totalCrossSection"])
-        self.differential_xs = photospline.SplineTable(self.block["differentialCrossSection"])
+        self.total_xs = self.block["totalCrossSection"]
+        self.differential_xs = self.block["differentialCrossSection"]
         self.Na = 6.022140857e+23
         self.earth_model = None
 
@@ -65,13 +66,15 @@ class generator:
     def prob_pos(self, events):
         return 1.0
 
-    def prob_interaction(self, events):
+    def prob_kinematics(self, events):
         events = np.asarray(events)
         energy = events["energy"]
         x = events["bjorken_x"]
         y = events["bjorken_y"]
-        coords = np.array([energy, x, y])
-        return self.differential_xs.evaluate_simple(coords, 0)
+        coords = np.array([np.log10(energy), np.log10(x), np.log10(y)])
+        diff_xs = 10.0**eval_spline(spline_repo[self.differential_xs], coords)
+        total_xs = 10.0**eval_spline(spline_repo[self.total_xs], coords[:,:1])
+        return diff_xs / total_xs
 
     def number_of_targets(self, events):
         events = np.asarray(events)
@@ -84,3 +87,4 @@ class generator:
         p *= self.probability_pos(events)
         p *= self.probability_final_state(events)
         p *= self.probability_interaction(events)
+        return p
