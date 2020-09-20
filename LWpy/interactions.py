@@ -8,8 +8,8 @@ class interaction:
         self.total_xs = total_xs
         self.particle = particle
         self.final_state = tuple(sorted(final_state))
-        self.signature = (self.particle, self.final_state)
-        self.key = (self.name, self.particle, self.final_state)
+        self.signature = (self.particle, *self.final_state)
+        self.key = (self.name, self.particle, *self.final_state)
 
     @classmethod
     def eval_spline(spline, coords, grad=None):
@@ -92,10 +92,52 @@ class interactions:
             return []
 
     def get_interactions(self, particle, final_state):
-        signature = (particle, set(final_state))
+        signature = (particle, *final_state)
         return self.interactions_by_signature[signature]
 
     def get_interaction(self, name, particle, final_state):
-        key = (name, particle, set(final_state))
+        key = (name, particle, *final_state)
         return self.interactions_by_key[key]
+
+class interaction_model(interactions, earth):
+    def __init__(self, interactions_list, earthparams):
+        interactions.__init__(self, interactions_list)
+        earth.__init__(self, earth_model_params)
+
+    #GetEarthDensitySegments
+
+    def prob_interaction(self, events):
+        events = np.asarray(events)
+        final_state = [events[s] for s in events.dtype.names if "final_state" in s]
+        particle = events["particle"]
+
+        final_state = np.array(final_state)
+        final_state = np.sort(final_state, axis=0)
+        signature = np.concatenate([[particle], final_state]).T
+        unique_signatures = np.unique(signature, axis=0)
+        unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
+        sig_masks = [signature == sig[None,:] for sig in unique_signatures]
+        sig_masks = dict(zip(unique_signatures, sig_masks))
+        sig_interactions = [self.get_interactions(sig[0], sig[1:]) for sig in unique_signatures_t]
+        diff_xs = np.zeros(len(events))
+        total_xs = np.zeros(len(events))
+        for sig_mask, relevant_interactions in zip(sig_masks, sig_interactions):
+            #diff_xs[sig_mask] += 
+        interaction_keys = [i.key() for i in si for si in si_interactions]
+        interaction_keys = np.unique(interaction_keys, axis=0)
+        relevant_interactions = [self.get_interaction(k[0], k[1], k[2:]) for k in interaction_keys]
+
+        for event in events:
+            energy = event["energy"]
+            x = event["byorken_x"]
+            y = event["byorken_y"]
+            coords = np.array([energy, x, y])
+
+
+        self.get_interactions()
+        energy = events["energy"]
+        x = events["byorken_x"]
+        y = events["byorken_y"]
+        coords = np.array([energy, x, y])
+        return differential_xs.evaluate_simple(coords, 0)
 
