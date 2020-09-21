@@ -8,6 +8,27 @@ def make_generator():
     blocks = s.read()
     return s, blocks, LWpy.generator(blocks[1])
 
+def make_volume_generator():
+    s = LWpy.read_stream('./config_DUNE.lic')
+    blocks = s.read()
+    return s, blocks, LWpy.volume_generator(blocks[1])
+
+def make_ranged_generator():
+    s = LWpy.read_stream('./config_DUNE.lic')
+    blocks = s.read()
+    v = blocks[1][2]["height"]
+    del blocks[1][2]["height"]
+    blocks[1][2]["length"] = v
+    earth_model_params = [
+        "DUNE",
+        "../resources/earthparams/",
+        ["PREM_dune"],
+        ["Standard"],
+        "NoIce",
+        20.0*LeptonInjector.Constants.degrees,
+        1480.0*LeptonInjector.Constants.m]
+    return s, blocks, LWpy.ranged_generator(blocks[1], earth_model_params)
+
 class GeneratorTests(unittest.TestCase):
     """Basic test cases."""
 
@@ -108,7 +129,6 @@ class GeneratorTests(unittest.TestCase):
             integral = (np.sum(p)/n)
             assert(abs(1.0 - integral) < 0.05)
 
-
     def test_generator_kinematics(self):
         s, blocks, gen = make_generator()
         n = int(1e6)
@@ -151,23 +171,82 @@ class GeneratorTests(unittest.TestCase):
         gen.prob(events)
 
     def test_volume_generator_init(self):
-        s = LWpy.read_stream('./config_DUNE.lic')
-        blocks = s.read()
-        LWpy.volume_generator(blocks[1])
+        s, blocks, gen = make_volume_generator()
+
+    def test_volume_generator_inside(self):
+        s, blocks, gen = make_volume_generator()
+        n = int(1e6)
+        block = blocks[1][2]
+        radius = block["radius"]
+        height = block["height"]
+
+        alpha = 2.**(1./3.)
+        base_r = alpha * radius
+        base_h = alpha * height
+
+        phi = np.random.uniform(0, 2*np.pi, n)
+        a = np.random.uniform(0, 1, n)
+        r = np.sqrt(a*(base_r**2))
+
+        x = r * np.cos(phi)
+        y = r * np.sin(phi)
+        z = np.random.uniform(-base_h/2., base_h/2., n)
+        events = np.array(list(zip(
+            x,
+            y,
+            z)),
+            dtype=[
+                ('x', 'f8'),
+                ('y', 'f8'),
+                ('z', 'f8'),
+                ])
+
+        integral = float(np.sum(gen.inside_volume(events))) / len(events)
+        assert(abs(1.0 - integral*2.) < 0.05)
+
+    def test_volume_generator_area(self):
+        s, blocks, gen = make_volume_generator()
+        n = int(1e6)
+        m = int(1e2)
+        block = blocks[1][2]
+        radius = block["radius"]
+        height = block["height"]
+
+        alpha = 2.**(1./3.)
+        base_r = alpha * radius
+        base_h = alpha * height
+
+        phi = np.random.uniform(0, 2*np.pi, n)
+        a = np.random.uniform(0, 1, n)
+        r = np.sqrt(a*(base_r**2))
+
+        x = r * np.cos(phi)
+        y = r * np.sin(phi)
+        z = np.random.uniform(-base_h/2., base_h/2., n)
+
+        zenith = np.arccos(np.random.uniform(-1, 1, m))
+        azimuth = np.random.uniform(0, 2*np.pi, m)
+        for az, zen in zip(azimuth, zenith):
+            az = np.full(n, az)
+            zen = np.full(n, zen)
+            events = np.array(list(zip(
+                x,
+                y,
+                z,
+                az,
+                zen)),
+                dtype=[
+                    ('x', 'f8'),
+                    ('y', 'f8'),
+                    ('z', 'f8'),
+                    ('azimuth', 'f8'),
+                    ('zenith', 'f8'),
+                    ])
+            mask = gen.inside_volume(events)
+            gen.prob_area(events[mask])
 
     def test_ranged_generator_init(self):
-        s = LWpy.read_stream('./config_DUNE.lic')
-        blocks = s.read()
-        earth_model_params = [
-            "DUNE",
-            "../resources/earthparams/",
-            ["PREM_dune"],
-            ["Standard"],
-            "NoIce",
-            20.0*LeptonInjector.Constants.degrees,
-            1480.0*LeptonInjector.Constants.m]
-        LWpy.ranged_generator(blocks[1], earth_model_params)
-
+        s, blocks, gen = make_ranged_generator()
 
 if __name__ == '__main__':
     unittest.main()
