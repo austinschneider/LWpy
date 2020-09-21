@@ -108,6 +108,50 @@ class GeneratorTests(unittest.TestCase):
             integral = (np.sum(p)/n)
             assert(abs(1.0 - integral) < 0.05)
 
+
+    def test_generator_kinematics(self):
+        s, blocks, gen = make_generator()
+        n = int(1e6)
+        block = blocks[1][2]
+        e_min = blocks[1][2]["energy_min"]
+        e_max = blocks[1][2]["energy_max"]
+        fs_0 = block["final_type_0"]
+        fs_1 = block["final_type_1"]
+        zenith_min = block["zenith_min"]
+        zenith_max = block["zenith_max"]
+        azimuth_min = block["azimuth_min"]
+        azimuth_max = block["azimuth_max"]
+
+
+        energy = np.random.uniform(e_min, e_max, n)
+        final_type_0 = np.ones(n) * fs_0
+        final_type_1 = np.ones(n) * fs_1
+        zenith = np.random.uniform(zenith_min, zenith_max, n)
+        azimuth = np.random.uniform(azimuth_min, azimuth_max, n)
+        bjorken_x = np.random.uniform(0.0, 1.0, n)
+        bjorken_y = np.random.uniform(0.0, 1.0, n)
+
+
+        events = np.array(list(zip(
+            energy,
+            final_type_0,
+            final_type_1,
+            zenith,
+            azimuth,
+            bjorken_x,
+            bjorken_y)),
+            dtype=[
+                ('energy', 'f8'),
+                ('final_type_0', 'i4'),
+                ('final_type_1', 'i4'),
+                ('zenith', 'f8'),
+                ('azimuth', 'f8'),
+                ('bjorken_x', 'f8'),
+                ('bjorken_y', 'f8'),
+                ])
+
+        gen.prob(events)
+
     def test_volume_generator_init(self):
         s = LWpy.read_stream('./config_DUNE.lic')
         blocks = s.read()
