@@ -95,7 +95,6 @@ class interaction_model(interactions, earth):
         unique_signatures = np.unique(signature, axis=0)
         unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
         sig_masks = [np.all(signature == sig[None,:], axis=1) for sig in unique_signatures]
-        #sig_masks = dict(zip(unique_signatures_t, sig_masks))
         sig_interactions = [self.get_interactions(sig[0], sig[1:]) for sig in unique_signatures_t]
         diff_xs = np.zeros(len(events)).astype(float)
         total_xs = np.zeros(len(events)).astype(float)
@@ -104,4 +103,31 @@ class interaction_model(interactions, earth):
                 diff_xs[sig_mask] += 10.0**(i.differential_cross_section(coords[sig_mask]))
                 total_xs[sig_mask] += 10.0**(i.total_cross_section(coords[sig_mask, :1]))
         return diff_xs / total_xs
+
+
+    def prob_interaction(self, events, first_pos, last_pos):
+        segments = self.GetEarthDensitySegments(first_pos, last_pos)
+
+        events = np.asarray(events)
+        final_state = [events[s] for s in events.dtype.names if "final_state" in s]
+        particle = events["particle"]
+        energy = events["energy"]
+        x = events["bjorken_x"]
+        y = events["bjorken_y"]
+        coords = np.array([np.log10(energy), np.log10(x), np.log10(y)]).T
+
+        final_state = np.array(final_state).astype(int)
+        final_state = np.sort(final_state, axis=0)
+        signature = np.concatenate([[particle], final_state]).T
+        unique_signatures = np.unique(signature, axis=0)
+        unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
+        sig_masks = [np.all(signature == sig[None,:], axis=1) for sig in unique_signatures]
+        sig_interactions = [self.get_interactions(sig[0], sig[1:]) for sig in unique_signatures_t]
+        total_xs_by_sig = []
+
+        for sig_mask, relevant_interactions in zip(sig_masks, sig_interactions):
+            for i in relevant_interactions:
+                total_xs[sig_mask] += 10.0**(i.total_cross_section(coords[sig_mask, :1]))
+        return diff_xs / total_xs
+
 
