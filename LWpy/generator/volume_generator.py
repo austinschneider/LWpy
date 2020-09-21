@@ -7,20 +7,45 @@ class volume_generator(generator):
     def __init__(self, block):
         generator.__init__(self, block)
 
-    def prob_area(self, events):
+    def inside_volume(self, events):
         events = np.asarray(events)
-        length = self.chord_length(events)
+
         radius = self.block["radius"]
         height = self.block["height"]
-        volume = p.pi * radius * radius * height
+
+        x = events["x"]
+        y = events["y"]
+        z = events["z"]
+
+        r = np.sqrt(x**2 + y**2)
+
+        return np.logical_and(np.abs(z) <= height/2.0, r < radius)
+
+    def prob_area(self, events):
+        events = np.asarray(events)
+        inside = self.inside_volume(events)
+
+        res = np.zeros(len(events))
+
+        length = self.chord_length(events[inside])
+        radius = self.block["radius"]
+        height = self.block["height"]
+        volume = np.pi * radius * radius * height
         p_area = length / volume
         p_area /= 1e4 # Convert from m^-2 to cm^-2
-        return p_area
+
+        res[inside] = p_area
+        return res
 
     def prob_pos(self, events):
-        length = self.get_chord_length(events)
+        events = np.asarray(events)
+        inside = self.inside_volume(events)
+
+        res = np.zeros(len(events))
+        length = self.get_chord_length(events[inside])
         # length is in m
-        return 1.0/length
+        res[inside] = 1.0/length
+        return res
 
     def chord_length(self, events):
         # This function finds the length of a chord passing through (x,y,z) at an angle (zenith, azimuth).
@@ -30,8 +55,8 @@ class volume_generator(generator):
         events = np.asarray(events)
 
         r = self.block["radius"]
-        cz1 = -1*self.block["height"]/2.0
-        cz2 = -1*cz1
+        cz1 = -self.block["height"]/2.0
+        cz2 = self.block["height"]/2.0
 
         zenith = events["zenith"]
         azimuth = events["azimuth"]
@@ -75,14 +100,14 @@ class volume_generator(generator):
         z2 = z + nz*sol_2
 
         # check if the solutions are within the z boundaries
-        b1_lower = z1<cz1
-        b2_lower = z2<cz1
-        b1_upper = z1>cz2
+        b1_lower = z1<cz1 # first solution below lower z
+        b2_lower = z2<cz1 # second solution below lower z
+        b1_upper = z1>cz2 # first solution above upper z
         b2_upper = z2>cz2
 
-        bb_lower = np.logical_or(b1_lower, b2_lower)
-        bb_upper = np.logical_or(b1_upper, b2_upper)
-        bb = np.logical_or(bb_lower, bb_upper)
+        bb_lower = np.logical_or(b1_lower, b2_lower) # either solution below lower z
+        bb_upper = np.logical_or(b1_upper, b2_upper) # either solution above upper z
+        bb = np.logical_or(bb_lower, bb_upper) # either solution out of bounds
 
         # these are the cyliner intersection points. Tentative solutions
         # x1, y1, z1
@@ -95,16 +120,17 @@ class volume_generator(generator):
         nr = np.sqrt(nr2)
         r0 = np.sqrt(r0_2)
 
+        # intersection with lower z cap
         t1 = (cz1-z)/nz
         xx = x + nx*t1
         yy = y + ny*t1
         zz = cz1
         x1[b1_lower] = xx[b1_lower]
         y1[b1_lower] = yy[b1_lower]
-        z1[b1_lower] = zz[b1_lower]
+        z1[b1_lower] = zz
         x2[b2_lower] = xx[b2_lower]
         y2[b2_lower] = yy[b2_lower]
-        z2[b2_lower] = zz[b2_lower]
+        z2[b2_lower] = zz
 
         t2 = (cz2-z)/nz
         xx = x + nx*t2
@@ -112,10 +138,37 @@ class volume_generator(generator):
         zz = cz2
         x1[b1_upper] = xx[b1_upper]
         y1[b1_upper] = yy[b1_upper]
-        z1[b1_upper] = zz[b1_upper]
-        x1[b2_upper] = xx[b2_upper]
-        y1[b2_upper] = yy[b2_upper]
-        z1[b2_upper] = zz[b2_upper]
+        z1[b1_upper] = zz
+        x2[b2_upper] = xx[b2_upper]
+        y2[b2_upper] = yy[b2_upper]
+        z2[b2_upper] = zz
+
+        on_side_1 = np.abs(np.sqrt(x1**2 + y1**2) - r) < 1e-4
+        on_side_2 = np.abs(np.sqrt(x2**2 + y2**2) - r) < 1e-4
+        between_caps_1 = np.abs(z1) <= self.block["height"]/2.0
+        between_caps_2 = np.abs(z2) <= self.block["height"]/2.0
+        on_cap_1 = np.logical_or(np.abs(z1 - cz1) < 1e-4, np.abs(z1 - cz2) < 1e-4)
+        on_cap_2 = np.logical_or(np.abs(z2 - cz1) < 1e-4, np.abs(z2 - cz2) < 1e-4)
+        on_1 = np.logical_or(np.logical_and(on_side_1, between_caps_1), on_cap_1)
+        on_2 = np.logical_or(np.logical_and(on_side_2, between_caps_2), on_cap_2)
+        if not np.all(on_1):
+            mask = ~on_1
+            print("radius:", self.block["radius"], "height:", self.block["height"])
+            print(np.sum(mask), "/", len(mask), "bad points:")
+            print(np.array(list(zip(x1[mask], y1[mask], z1[mask]))))
+            r = np.sqrt(x1**2 + y1**2)
+            h = z1
+            print(np.array(list(zip(r[mask], h[mask]))))
+            assert(np.all(on_1))
+        if not np.all(on_2):
+            mask = ~on_2
+            print("radius:", self.block["radius"], "height:", self.block["height"])
+            print(np.sum(mask), "/", len(mask), "bad points:")
+            print(np.array(list(zip(x2[mask], y2[mask], z2[mask]))))
+            r = np.sqrt(x2**2 + y2**2)
+            h = z2
+            print(np.array(list(zip(r[mask], h[mask]))))
+            assert(np.all(on_2))
 
         dist_sq = (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2
         res[nonzero] = np.sqrt(dist_sq)
