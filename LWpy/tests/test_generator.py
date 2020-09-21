@@ -54,8 +54,6 @@ class GeneratorTests(unittest.TestCase):
         s, blocks, gen = make_generator()
         n = int(1e4)
         block = blocks[1][2]
-        print(list(block.keys()))
-
         fs_0 = block["final_type_0"]
         fs_1 = block["final_type_1"]
 
@@ -77,6 +75,38 @@ class GeneratorTests(unittest.TestCase):
         final_type_1 = np.ones(n) * fs_1+1
         assert(np.sum(gen.prob_final_state(get_events())) == 0)
 
+    def test_generator_area(self):
+        s, blocks, gen = make_generator()
+        p = gen.prob_area(None)
+        assert(p == 1)
+
+    def test_generator_pos(self):
+        s, blocks, gen = make_generator()
+        p = gen.prob_pos(None)
+        assert(p == 1)
+
+    def test_generator_kinematics(self):
+        s, blocks, gen = make_generator()
+        n = int(1e6)
+        m = int(20)
+        block = blocks[1][2]
+        e_min = blocks[1][2]["energy_min"]
+        e_max = blocks[1][2]["energy_max"]
+        energies = np.random.uniform(e_min, e_max, m)
+        for energy in energies:
+            energy = np.full(n, energy)
+            bjorken_x = np.random.uniform(0.0, 1.0, n)
+            bjorken_y = np.random.uniform(0.0, 1.0, n)
+
+            events = np.array(list(zip(
+                energy,
+                bjorken_x,
+                bjorken_y)),
+                dtype=[('energy', 'f8'), ('bjorken_x', 'f8'), ('bjorken_y', 'f8')])
+
+            p = gen.prob_kinematics(events)
+            integral = (np.sum(p)/n)
+            assert(abs(1.0 - integral) < 0.05)
 
     def test_volume_generator_init(self):
         s = LWpy.read_stream('./config_DUNE.lic')
