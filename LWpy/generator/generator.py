@@ -77,7 +77,7 @@ class generator:
         y = events["bjorken_y"]
         coords = np.array([np.log10(energy), np.log10(x), np.log10(y)])
         diff_xs = 10.0**eval_spline(spline_repo[self.differential_xs], coords)
-        total_xs = 10.0**eval_spline(spline_repo[self.total_xs], coords[:,:1])
+        total_xs = 10.0**eval_spline(spline_repo[self.total_xs], coords[:1])
         return diff_xs / total_xs
 
     def number_of_targets(self, events):
