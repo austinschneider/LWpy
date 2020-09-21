@@ -2,6 +2,7 @@ from context import LWpy
 import unittest
 import LeptonInjector
 import numpy as np
+import h5py as h5
 
 def make_generator():
     s = LWpy.read_stream('./config_DUNE.lic')
@@ -206,8 +207,8 @@ class GeneratorTests(unittest.TestCase):
 
     def test_volume_generator_area(self):
         s, blocks, gen = make_volume_generator()
-        n = int(1e6)
-        m = int(1e2)
+        n = int(1e5)
+        m = int(20)
         block = blocks[1][2]
         radius = block["radius"]
         height = block["height"]
@@ -247,6 +248,44 @@ class GeneratorTests(unittest.TestCase):
 
     def test_ranged_generator_init(self):
         s, blocks, gen = make_ranged_generator()
+
+    def test_ranged_generator_area(self):
+        s, blocks, gen = make_ranged_generator()
+        block = blocks[1][2]
+        radius = block["radius"]
+        prob = gen.prob_area(None)
+        integral = (prob * radius*radius*np.pi * 1e4)
+        assert(abs(1.0 - integral) < 0.05)
+
+    def test_ranged_generator_pos(self):
+        s, blocks, gen = make_ranged_generator()
+
+        data_file = h5.File("data_output_DUNE.h5")
+        injector_list = [i for i in data_file.keys()]
+        for i in injector_list:
+            props = data_file[i]["properties"][:]
+            props.dtype.names = (
+                    'energy',
+                    'zenith',
+                    'azimuth',
+                    'bjorken_x',
+                    'bjorken_y',
+                    'final_type_0',
+                    'final_type_1',
+                    'particle',
+                    'radius',
+                    'z',
+                    'total_column_depth'
+                    )
+            names = props.dtype.names
+            formats = [(s,v) for s,v in props.dtype.descr if s in names]
+            formats += [('x', '<f8'), ('y', '<f8')]
+            a = [props[n] for n in names]
+            a += [np.zeros(len(props)), np.zeros(len(props))]
+            props = np.array(list(zip(*a)), dtype=formats)
+            gen.prob_pos(props)
+            gen.prob_area(props)
+            gen.get_considered_range(props)
 
 if __name__ == '__main__':
     unittest.main()
