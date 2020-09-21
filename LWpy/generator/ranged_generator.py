@@ -24,14 +24,14 @@ class ranged_generator(generator, earth):
         x = events["x"]
         y = events["y"]
         z = events["z"]
-        isTau = ((self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauMinus
-            or self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauPlus)
-            or (self.block["final_type_2"] == LeptonInjector.Particle.ParticleType.TauMinus
-                or self.block["final_type_2"] == LeptonInjector.Particle.ParticleType.TauPlus))
+        isTau = ((self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauMinus
+            or self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauPlus)
+            or (self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauMinus
+                or self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauPlus))
 
         use_electron_density = LeptonInjector.getInteraction(
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]),
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_2"]))
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_0"]),
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]))
 
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
         direction = np.array([LeptonInjector.LI_Direction(zen, azi) for zen,azi in zip(zenith, azimuth)])
@@ -77,14 +77,14 @@ class ranged_generator(generator, earth):
         y = events["y"]
         z = events["z"]
 
-        isTau = ((self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauMinus
-            or self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauPlus)
-            or (self.block["final_type_2"] == LeptonInjector.Particle.ParticleType.TauMinus
-                or self.block["final_type_2"] == LeptonInjector.Particle.ParticleType.TauPlus))
+        isTau = ((self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauMinus
+            or self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauPlus)
+            or (self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauMinus
+                or self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauPlus))
 
         use_electron_density = LeptonInjector.getInteraction(
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]),
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_2"]))
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_0"]),
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]))
 
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
         direction = np.array([LeptonInjector.LI_Direction(zen, azi) for zen,azi in zip(zenith, azimuth)])

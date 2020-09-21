@@ -78,8 +78,8 @@ class read_stream:
         azimuth_max = self.read_double()
         zenith_min = self.read_double()
         zenith_max = self.read_double()
+        final_type_0 = self.read_int(self.particle_size, signed=True)
         final_type_1 = self.read_int(self.particle_size, signed=True)
-        final_type_2 = self.read_int(self.particle_size, signed=True)
         xs_size = self.read_int(self.size_size)
         xs_data = self.read_bin(xs_size)
         txs_size = self.read_int(self.size_size)
@@ -112,8 +112,8 @@ class read_stream:
                 "azimuth_max": azimuth_max,
                 "zenith_min": zenith_min,
                 "zenith_max": zenith_max,
-                "final_type_1": final_type_1,
-                "final_type_2":  final_type_2,
+                "final_type_0": final_type_0,
+                "final_type_1":  final_type_1,
                 "totalCrossSection": txs_name,
                 "differentialCrossSection": xs_name,
                 "radius": radius,
@@ -237,8 +237,8 @@ class write_stream:
         azimuth_max = block["azimuth_max"]
         zenith_min = block["zenith_min"]
         zenith_max = block["zenith_max"]
+        final_type_0 = block["final_type_0"]
         final_type_1 = block["final_type_1"]
-        final_type_2 = block["final_type_2"]
         totalCrossSection = block["totalCrossSection"]
         differentialCrossSection = block["differentialCrossSection"]
         radius = block["radius"]
@@ -262,8 +262,8 @@ class write_stream:
         n += self.write_double(azimuth_max)
         n += self.write_double(zenith_min)
         n += self.write_double(zenith_max)
+        n += self.write_int(final_type_0, self.particle_size, signed=True)
         n += self.write_int(final_type_1, self.particle_size, signed=True)
-        n += self.write_int(final_type_2, self.particle_size, signed=True)
         n += self.write_int(xs_size, self.size_size)
         n += self.write_bin(xs_data)
         n += self.write_int(txs_size, self.size_size)

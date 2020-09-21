@@ -37,27 +37,31 @@ class generator:
     def prob_dir(self, events):
         events = np.asarray(events)
         res = np.zeros(len(events))
+        zenith_min = self.block["zenith_min"]
+        zenith_max = self.block["zenith_max"]
+        azimuth_min = self.block["azimuth_min"]
+        azimuth_max = self.block["azimuth_max"]
         zenith = events["zenith"]
         azimuth = events["azimuth"]
-        nonzero = functools.reduce(np.logical_and,
+        nonzero = np.all(
                 [
                 zenith >= zenith_min,
                 zenith <= zenith_max,
                 azimuth >= azimuth_min,
                 azimuth <= azimuth_max,
-                ])
-        res[nonzero] = 1.0/((azimuth_maz-azimuth_min)*(np.cos(zenith_min)-np.cos(zenith_max)))
+                ], axis=0)
+        res[nonzero] = 1.0/((azimuth_max-azimuth_min)*(np.cos(zenith_min)-np.cos(zenith_max)))
         return res
 
     def prob_final_state(self, events):
         events = np.asarray(events)
-        final_state_0 = events["final_state_0"]
-        final_state_1 = events["final_state_1"]
+        final_type_0 = events["final_type_0"]
+        final_type_1 = events["final_type_1"]
         return np.logical_or(
-            np.logical_and(final_state_0 == self.block["final_state_0"],
-                           final_state_1 == self.block["final_state_1"]),
-            np.logical_and(final_state_0 == self.block["final_state_1"],
-                           final_state_1 == self.block["final_state_0"])
+            np.logical_and(final_type_0 == self.block["final_type_0"],
+                           final_type_1 == self.block["final_type_1"]),
+            np.logical_and(final_type_0 == self.block["final_type_1"],
+                           final_type_1 == self.block["final_type_0"])
             )
 
     def prob_area(self, events):
