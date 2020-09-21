@@ -1,14 +1,82 @@
 from context import LWpy
 import unittest
 import LeptonInjector
+import numpy as np
+
+def make_generator():
+    s = LWpy.read_stream('./config_DUNE.lic')
+    blocks = s.read()
+    return s, blocks, LWpy.generator(blocks[1])
 
 class GeneratorTests(unittest.TestCase):
     """Basic test cases."""
 
     def test_generator_init(self):
-        s = LWpy.read_stream('./config_DUNE.lic')
-        blocks = s.read()
-        LWpy.generator(blocks[1])
+        make_generator()
+
+    def test_generator_stat(self):
+        s, blocks, gen = make_generator()
+        n0 = gen.prob_stat(None)
+        n1 = blocks[1][2]["events"]
+        assert(n0 == n1)
+
+    def test_generator_e(self):
+        s, blocks, gen = make_generator()
+        n = int(1e7)
+        e_min = blocks[1][2]["energy_min"]
+        e_max = blocks[1][2]["energy_max"]
+        events = np.array(np.random.uniform(e_min, e_max, n), dtype=[('energy', 'f8')])
+        pe = gen.prob_e(events)
+        integral = (np.sum(pe) * (e_max-e_min)/n)
+        assert(abs(1.0 - integral) < 0.05)
+
+    def test_generator_dir(self):
+        s, blocks, gen = make_generator()
+        n = int(1e4)
+        block = blocks[1][2]
+
+        zenith_min = block["zenith_min"]
+        zenith_max = block["zenith_max"]
+        azimuth_min = block["azimuth_min"]
+        azimuth_max = block["azimuth_max"]
+
+        zenith = np.random.uniform(zenith_min, zenith_max, n)
+        azimuth = np.random.uniform(azimuth_min, azimuth_max, n)
+
+        events = np.array(list(zip(zenith, azimuth)), dtype=[('zenith', 'f8'), ('azimuth', 'f8')])
+
+        probs = gen.prob_dir(events)
+
+        integral = (np.sum(probs) * (azimuth_max-azimuth_min)*(np.cos(zenith_min)-np.cos(zenith_max))/n)
+        assert(abs(1.0 - integral) < 0.05)
+
+    def test_generator_final_state(self):
+        s, blocks, gen = make_generator()
+        n = int(1e4)
+        block = blocks[1][2]
+        print(list(block.keys()))
+
+        fs_0 = block["final_type_0"]
+        fs_1 = block["final_type_1"]
+
+        def get_events():
+            return np.array(list(zip(final_type_0, final_type_1)), dtype=[('final_type_0', 'i'), ('final_type_1', 'i')])
+        final_type_0 = np.ones(n) * fs_0
+        final_type_1 = np.ones(n) * fs_1
+        assert(np.sum(gen.prob_final_state(get_events())) == n)
+
+        final_type_0 = np.ones(n) * fs_1
+        final_type_1 = np.ones(n) * fs_0
+        assert(np.sum(gen.prob_final_state(get_events())) == n)
+
+        final_type_0 = np.ones(n) * (fs_0+1)
+        final_type_1 = np.ones(n) * fs_1
+        assert(np.sum(gen.prob_final_state(get_events())) == 0)
+
+        final_type_0 = np.ones(n) * fs_0
+        final_type_1 = np.ones(n) * fs_1+1
+        assert(np.sum(gen.prob_final_state(get_events())) == 0)
+
 
     def test_volume_generator_init(self):
         s = LWpy.read_stream('./config_DUNE.lic')
