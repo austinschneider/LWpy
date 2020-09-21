@@ -62,7 +62,7 @@ class generator:
                            final_type_1 == self.block["final_type_1"]),
             np.logical_and(final_type_0 == self.block["final_type_1"],
                            final_type_1 == self.block["final_type_0"])
-            )
+            ).astype(float)
 
     def prob_area(self, events):
         return 1.0
@@ -84,11 +84,17 @@ class generator:
         events = np.asarray(events)
         return self.Na * events["total_column_depth"]
 
-    def probability(self, events):
-        p = self.probability_e(events)
-        p *= self.probability_dir(events)
-        p *= self.probability_area(events)
-        p *= self.probability_pos(events)
-        p *= self.probability_final_state(events)
-        p *= self.probability_interaction(events)
+    def prob(self, events):
+        p = self.prob_final_state(events)
+        p *= self.prob_stat(events)
+        nonzero = p != 0
+        p[nonzero] *= self.prob_dir(events[nonzero])
+        nonzero = p != 0
+        p[nonzero] *= self.prob_e(events[nonzero])
+        nonzero = p != 0
+        p[nonzero] *= self.prob_area(events[nonzero])
+        nonzero = p != 0
+        p[nonzero] *= self.prob_pos(events[nonzero])
+        nonzero = p != 0
+        p[nonzero] *= self.prob_kinematics(events[nonzero])
         return p
