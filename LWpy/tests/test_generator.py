@@ -122,7 +122,6 @@ class GeneratorTests(unittest.TestCase):
         azimuth_min = block["azimuth_min"]
         azimuth_max = block["azimuth_max"]
 
-
         energy = np.random.uniform(e_min, e_max, n)
         final_type_0 = np.ones(n) * fs_0
         final_type_1 = np.ones(n) * fs_1
@@ -130,7 +129,6 @@ class GeneratorTests(unittest.TestCase):
         azimuth = np.random.uniform(azimuth_min, azimuth_max, n)
         bjorken_x = np.random.uniform(0.0, 1.0, n)
         bjorken_y = np.random.uniform(0.0, 1.0, n)
-
 
         events = np.array(list(zip(
             energy,
