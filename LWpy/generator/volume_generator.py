@@ -48,6 +48,12 @@ class volume_generator(generator):
         return res
 
     def chord_length(self, events):
+        first_pos, last_pos = self.get_considered_range(events)
+        v = (last_pos - first_pos)
+        d = np.array([vv.Magnitude() for vv in v])
+        return d
+
+    def get_considered_range(self, events):
         # This function finds the length of a chord passing through (x,y,z) at an angle (zenith, azimuth).
         # It gets the intersections with the cylinder, and then calculates the distance between those intersections
         # Uses the same get-cylinder-intersection algorithm as LeptonInjector
@@ -55,6 +61,7 @@ class volume_generator(generator):
         events = np.asarray(events)
 
         r = self.block["radius"]
+        height = self.block["height"]
         cz1 = -self.block["height"]/2.0
         cz2 = self.block["height"]/2.0
 
@@ -65,9 +72,7 @@ class volume_generator(generator):
         ny = np.sin(azimuth)*np.sin(zenith)
         nz = np.cos(zenith)
 
-        res = np.zeros(len(events))
         nonzero = ~np.logical_and(nx == 0.0, ny == 0.0)
-        res[~nonzero] = self.block["height"]/2.0
 
         nx = nx[nonzero]
         ny = ny[nonzero]
@@ -145,8 +150,8 @@ class volume_generator(generator):
 
         on_side_1 = np.abs(np.sqrt(x1**2 + y1**2) - r) < 1e-4
         on_side_2 = np.abs(np.sqrt(x2**2 + y2**2) - r) < 1e-4
-        between_caps_1 = np.abs(z1) <= self.block["height"]/2.0
-        between_caps_2 = np.abs(z2) <= self.block["height"]/2.0
+        between_caps_1 = np.abs(z1) <= height/2.0
+        between_caps_2 = np.abs(z2) <= height/2.0
         on_cap_1 = np.logical_or(np.abs(z1 - cz1) < 1e-4, np.abs(z1 - cz2) < 1e-4)
         on_cap_2 = np.logical_or(np.abs(z2 - cz1) < 1e-4, np.abs(z2 - cz2) < 1e-4)
         on_1 = np.logical_or(np.logical_and(on_side_1, between_caps_1), on_cap_1)
@@ -170,7 +175,14 @@ class volume_generator(generator):
             print(np.array(list(zip(r[mask], h[mask]))))
             assert(np.all(on_2))
 
-        dist_sq = (x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2
-        res[nonzero] = np.sqrt(dist_sq)
+        i = np.arange(len(events))
+        nonzero_index = i[nonzero]
+        zero_index = i[~nonzero]
+        index = np.empty(len(events)).astype(int)
+        index[nonzero] = np.arange(len(nonzero_index))
+        index[~nonzero] = np.arange(len(zero_index))
+        res = [(LeptonInjector.LI_Position(x1[index[i]], y1[index[i]], z1[index[i]]), LeptonInjector.LI_Position(x2[index[i]], y2[index[i]], z2[index[i]])) if nonzero[i] else (LeptonInjector.LI_Position(x[i], y[i], -np.sign(z[i])*height/2.), LeptonInjector.LI_Position(x[i], y[i], np.sign(z[i])*height/2.)) for i in range(len(events))]
 
-        return res
+        res = np.array(res).T
+
+        return res[0], res[1]
