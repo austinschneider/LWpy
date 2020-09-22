@@ -12,6 +12,10 @@ class interaction:
         self.signature = (self.particle, *self.final_state)
         self.key = (self.name, self.particle, *self.final_state)
 
+    def use_electron_density(self):
+        return LeptonInjector.getInteraction(
+                *[LeptonInjector.Particle.ParticleType(p) for p in self.final_state]) == 2
+
     def total_cross_section(self, coords, grad=None):
         spline = spline_repo[self.total_xs]
         coords = np.asarray(coords).T
@@ -115,19 +119,33 @@ class interaction_model(interactions, earth):
         x = events["bjorken_x"]
         y = events["bjorken_y"]
         coords = np.array([np.log10(energy), np.log10(x), np.log10(y)]).T
+        particles = sorted(np.unique(particle))
+        p_indexing = dict(zip(particles, range(len(particles))))
+        p_masks = [particle == p for p in particles]
+        p_interactions = [self.get_particle_interactions(p) for p in particles]
+        p_p_txs = [[i.total_cross_section(coords[p_mask]) for i in p_int if not i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
+        p_e_txs = [[i.total_cross_section(coords[p_mask]) for i in p_int if i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
+        p_p_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in p_p_txs]
+        p_e_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in p_e_txs]
 
-        final_state = np.array(final_state).astype(int)
-        final_state = np.sort(final_state, axis=0)
-        signature = np.concatenate([[particle], final_state]).T
-        unique_signatures = np.unique(signature, axis=0)
-        unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
-        sig_masks = [np.all(signature == sig[None,:], axis=1) for sig in unique_signatures]
-        sig_interactions = [self.get_interactions(sig[0], sig[1:]) for sig in unique_signatures_t]
-        total_xs_by_sig = []
+        p_txs_res = np.empty(len(events))
+        e_txs_res = np.empty(len(events))
+        for p_txs, e_txs, mask in zip(p_p_txs, p_e_txs, p_masks):
+            p_txs_res[mask] = p_txs
+            e_txs_res[mask] = e_txs
 
-        for sig_mask, relevant_interactions in zip(sig_masks, sig_interactions):
-            for i in relevant_interactions:
-                total_xs[sig_mask] += 10.0**(i.total_cross_section(coords[sig_mask, :1]))
+
+
+        for event, event_segments, p_xs, e_xs in zip(events, segments, p_txs_res, e_txs_res):
+            s = 0
+            a_i = 0
+            p = 0
+            p_interactions = self.get_particle_interactions(p)
+            for segment in event_segments:
+                nucleon_density, electron_density, length = segment
+                nsigma = self.Na * (p_xs * nucleon_density + e_xs * electron_density)
+                a = np.exp(-nsigma*)
+
         return diff_xs / total_xs
 
-
+ 
