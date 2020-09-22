@@ -31,7 +31,7 @@ class ranged_generator(generator, earth):
 
         use_electron_density = LeptonInjector.getInteraction(
                     LeptonInjector.Particle.ParticleType(self.block["final_type_0"]),
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]))
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"])) == 2
 
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
         direction = np.array([LeptonInjector.LI_Direction(zen, azi) for zen,azi in zip(zenith, azimuth)])
@@ -84,7 +84,7 @@ class ranged_generator(generator, earth):
 
         use_electron_density = LeptonInjector.getInteraction(
                     LeptonInjector.Particle.ParticleType(self.block["final_type_0"]),
-                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"]))
+                    LeptonInjector.Particle.ParticleType(self.block["final_type_1"])) == 2
 
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
         direction = np.array([LeptonInjector.LI_Direction(zen, azi) for zen,azi in zip(zenith, azimuth)])
