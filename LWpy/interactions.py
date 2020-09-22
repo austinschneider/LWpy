@@ -1,6 +1,8 @@
 from .spline import spline_repo, eval_spline
 from .earth import earth
 import numpy as np
+import scipy.special
+import LeptonInjector
 
 class interaction:
     def __init__(self, name, particle, final_state, differential_xs, total_xs):
@@ -83,10 +85,11 @@ class interaction_model(interactions, earth):
     def __init__(self, interactions_list, earth_params):
         interactions.__init__(self, interactions_list)
         earth.__init__(self, earth_params)
+        self.Na = 6.022140857e+23
 
     def prob_kinematics(self, events):
         events = np.asarray(events)
-        final_state = [events[s] for s in events.dtype.names if "final_state" in s]
+        final_state = [events[s] for s in events.dtype.names if "final_type" in s]
         particle = events["particle"]
         energy = events["energy"]
         x = events["bjorken_x"]
@@ -95,7 +98,7 @@ class interaction_model(interactions, earth):
 
         final_state = np.array(final_state).astype(int)
         final_state = np.sort(final_state, axis=0)
-        signature = np.concatenate([[particle], final_state]).T
+        signature = np.concatenate([particle[None,:], final_state]).T
         unique_signatures = np.unique(signature, axis=0)
         unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
         sig_masks = [np.all(signature == sig[None,:], axis=1) for sig in unique_signatures]
@@ -109,8 +112,8 @@ class interaction_model(interactions, earth):
         return diff_xs / total_xs
 
 
-    def prob_interaction(self, events, first_pos, last_pos):
-        segments = self.GetEarthDensitySegments(first_pos, last_pos)
+    def prob_pos(self, events, first_pos, last_pos):
+        segments = self.GetDensitySegments(first_pos, last_pos)
 
         events = np.asarray(events)
         final_state = [events[s] for s in events.dtype.names if "final_state" in s]
@@ -118,13 +121,13 @@ class interaction_model(interactions, earth):
         energy = events["energy"]
         x = events["bjorken_x"]
         y = events["bjorken_y"]
-        coords = np.array([np.log10(energy), np.log10(x), np.log10(y)]).T
+        coords = np.array([np.log10(energy)]).T
         particles = sorted(np.unique(particle))
         p_indexing = dict(zip(particles, range(len(particles))))
         p_masks = [particle == p for p in particles]
         p_interactions = [self.get_particle_interactions(p) for p in particles]
-        p_p_txs = [[i.total_cross_section(coords[p_mask]) for i in p_int if not i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
-        p_e_txs = [[i.total_cross_section(coords[p_mask]) for i in p_int if i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
+        p_p_txs = [[10.0**i.total_cross_section(coords[p_mask]) for i in p_int if not i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
+        p_e_txs = [[10.0**i.total_cross_section(coords[p_mask]) for i in p_int if i.use_electron_density()] for p_int,p_mask,p in zip(p_interactions,p_masks,particles)]
         p_p_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in p_p_txs]
         p_e_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in p_e_txs]
 
@@ -134,18 +137,50 @@ class interaction_model(interactions, earth):
             p_txs_res[mask] = p_txs
             e_txs_res[mask] = e_txs
 
+        #total_column_depth_p = self.GetColumnDepthInCGS(first_pos, last_pos, False)
+        #total_column_depth_e = self.GetColumnDepthInCGS(first_pos, last_pos, True)
 
+        x = events["x"]
+        y = events["y"]
+        z = events["z"]
+        position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
 
-        for event, event_segments, p_xs, e_xs in zip(events, segments, p_txs_res, e_txs_res):
-            s = 0
-            a_i = 0
-            p = 0
-            p_interactions = self.get_particle_interactions(p)
+        res = []
+
+        one_m_mexp = lambda val: np.log(val) - val/2. + val**2/24. - val**4/2880. if val < 1e-1 else np.log(1.-np.exp(-val))
+
+        for i, (event, event_segments, p_xs, e_xs, f_p, l_p, pos) in enumerate(zip(events, segments, p_txs_res, e_txs_res, first_pos, last_pos, position)):
+            distance = (l_p - f_p) * (pos - f_p)
+            total_distance = (l_p - f_p).Magnitude()
+            s = []
+            exponential_i = []
+            exp_i = 0
+            segment_distance = 0
+            exponentials = []
+            got_segment = False
             for segment in event_segments:
                 nucleon_density, electron_density, length = segment
-                nsigma = self.Na * (p_xs * nucleon_density + e_xs * electron_density)
-                a = np.exp(-nsigma*)
+                nsigma = self.Na * (p_xs * nucleon_density + e_xs * electron_density) * 1e2 # target interactions per meter
+                ss = np.sum(exponentials) + one_m_mexp(nsigma*length) - np.log(nsigma)
+                s.append(ss)
+                exponential = -nsigma*length
+                exponentials.append(exponential)
+                segment_distance += length
+                if segment_distance > distance and not got_segment:
+                    got_segment = True
+                    exponential_i = list(exponentials)
+                    nsigma_i = nsigma
+                    x = distance - (segment_distance - length)
+                    exp_i = -nsigma_i*x
 
-        return diff_xs / total_xs
+            pos_density = np.exp(np.sum(exponential_i) + exp_i - scipy.special.logsumexp(s))
+            #nsigmax = self.Na * p_xs * total_column_depth_p[i] + e_xs * total_column_depth_e[i]
+            #nsigma = nsigmax / total_distance
+            #pos_density_2 = np.exp(-nsigma*distance + np.log(nsigma) - one_m_mexp(nsigmax))
+            #pos_density_3 = (1.0 - nsigma*distance)/total_distance
+            #print(total_distance, pos_density, pos_density_2/pos_density, pos_density_3/pos_density)
+            res.append(pos_density)
 
- 
+        return np.array(res)
+
+
