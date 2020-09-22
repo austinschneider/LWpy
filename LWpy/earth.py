@@ -65,8 +65,8 @@ class earth:
             c,
             use_electron_density)
             for p,d,c in zip(p0, d0, col)])
-    def GetEarthDensitySegments(self, first_point, last_point, use_electron_density=False):
-        return [self.earthModel.GetEarthDensitySegments(fp, lp, use_electron_density) for fp,lp in zip(first_point, last_point)]
+    def GetEarthDensitySegments(self, first_point, last_point):
+        return [self.earthModel.GetEarthDensitySegments(fp, lp) for fp,lp in zip(first_point, last_point)]
 
     def GetEarthDensityInCGS(self, position):
         return np.array([self.earthModel.GetEarthDensityInCGS(p) for p in position])
