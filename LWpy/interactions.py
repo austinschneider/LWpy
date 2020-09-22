@@ -165,7 +165,7 @@ class interaction_model(interactions, earth):
         res = []
 
         for i, (event, event_segments, p_xs, e_xs, f_p, l_p, pos) in enumerate(zip(events, segments, p_txs_res, e_txs_res, first_pos, last_pos, position)):
-            distance = (l_p - f_p) * (pos - f_p)
+            distance = (pos - f_p).Magnitude()
             total_distance = (l_p - f_p).Magnitude()
             s = []
             exponential_i = []
