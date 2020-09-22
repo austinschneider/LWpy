@@ -112,15 +112,11 @@ class interaction_model(interactions, earth):
         return diff_xs / total_xs
 
 
-    def prob_pos(self, events, first_pos, last_pos):
-        segments = self.GetDensitySegments(first_pos, last_pos)
-
+    def get_total_cross_section(self, events):
         events = np.asarray(events)
         final_state = [events[s] for s in events.dtype.names if "final_state" in s]
         particle = events["particle"]
         energy = events["energy"]
-        x = events["bjorken_x"]
-        y = events["bjorken_y"]
         coords = np.array([np.log10(energy)]).T
         particles = sorted(np.unique(particle))
         p_indexing = dict(zip(particles, range(len(particles))))
@@ -137,6 +133,27 @@ class interaction_model(interactions, earth):
             p_txs_res[mask] = p_txs
             e_txs_res[mask] = e_txs
 
+        return p_txs_res, e_txs_res
+
+    @staticmethod
+    def log_one_m_mexp(val):
+        return np.log(val) - val/2. + val**2/24. - val**4/2880. if val < 1e-1 else np.log(1.-np.exp(-val))
+
+    @staticmethod
+    def one_m_mexp(val):
+        val = np.asarray(val)
+        mask = val < 1e-1
+        res = np.empty(np.shape(val))
+        val_less, val_greater = val[mask], val[~mask]
+        res[mask] = np.exp(np.log(val_less) - val_less/2. + val_less**2/24. - val_less**4/2880.)
+        res[~mask] = 1.-np.exp(-val_greater)
+        return res
+
+    def prob_pos(self, events, first_pos, last_pos):
+        segments = self.GetDensitySegments(first_pos, last_pos)
+
+        p_txs_res, e_txs_res = self.get_total_cross_section(events)
+
         #total_column_depth_p = self.GetColumnDepthInCGS(first_pos, last_pos, False)
         #total_column_depth_e = self.GetColumnDepthInCGS(first_pos, last_pos, True)
 
@@ -146,8 +163,6 @@ class interaction_model(interactions, earth):
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
 
         res = []
-
-        one_m_mexp = lambda val: np.log(val) - val/2. + val**2/24. - val**4/2880. if val < 1e-1 else np.log(1.-np.exp(-val))
 
         for i, (event, event_segments, p_xs, e_xs, f_p, l_p, pos) in enumerate(zip(events, segments, p_txs_res, e_txs_res, first_pos, last_pos, position)):
             distance = (l_p - f_p) * (pos - f_p)
@@ -161,7 +176,7 @@ class interaction_model(interactions, earth):
             for segment in event_segments:
                 nucleon_density, electron_density, length = segment
                 nsigma = self.Na * (p_xs * nucleon_density + e_xs * electron_density) * 1e2 # target interactions per meter
-                ss = np.sum(exponentials) + one_m_mexp(nsigma*length) - np.log(nsigma)
+                ss = np.sum(exponentials) + self.log_one_m_mexp(nsigma*length) - np.log(nsigma)
                 s.append(ss)
                 exponential = -nsigma*length
                 exponentials.append(exponential)
@@ -183,4 +198,14 @@ class interaction_model(interactions, earth):
 
         return np.array(res)
 
+    def prob_interaction(self, events, first_pos, last_pos):
+        events = np.asarray(events)
+
+        total_column_depth_p = self.GetColumnDepthInCGS(first_pos, last_pos, False)
+        total_column_depth_e = self.GetColumnDepthInCGS(first_pos, last_pos, True)
+
+        p_txs, e_txs = self.get_total_cross_section(events)
+
+        exponent = self.Na * (p_txs * total_column_depth_p + e_txs * total_column_depth_e)
+        return self.one_m_mexp(exponent)
 
