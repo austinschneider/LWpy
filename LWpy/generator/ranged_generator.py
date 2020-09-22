@@ -70,35 +70,22 @@ class ranged_generator(generator, earth):
     def prob_pos(self, events):
         events = np.asarray(events)
 
-        energy = events["energy"]
-        zenith = events["zenith"]
-        azimuth = events["azimuth"]
         x = events["x"]
         y = events["y"]
         z = events["z"]
-
-        isTau = ((self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauMinus
-            or self.block["final_type_0"] == LeptonInjector.Particle.ParticleType.TauPlus)
-            or (self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauMinus
-                or self.block["final_type_1"] == LeptonInjector.Particle.ParticleType.TauPlus))
 
         use_electron_density = LeptonInjector.getInteraction(
                     LeptonInjector.Particle.ParticleType(self.block["final_type_0"]),
                     LeptonInjector.Particle.ParticleType(self.block["final_type_1"])) == 2
 
+        first_pos, last_pos = self.get_considered_range(events)
+
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
-        direction = np.array([LeptonInjector.LI_Direction(zen, azi) for zen,azi in zip(zenith, azimuth)])
-        endcapLength = self.block["length"] * LeptonInjector.Constants.meter
 
-        pca = self.get_pca(direction, position)
+        totalColumnDepth = self.GetColumnDepthInCGS(first_pos, last_pos, use_electron_density)
 
-        lepton_range = self.MWEtoColumnDepthCGS(self.GetLeptonRange(energy, isTau=isTau))
-        endcap_range = self.GetColumnDepthInCGS(
-                pca - endcapLength*direction,
-                pca + endcapLength*direction,
-                use_electron_density)
-
-        totalColumnDepth = lepton_range + endcap_range
-        density = self.GetEarthDensityInCGS(position) * self.GetPNERatio(position)
+        density = self.GetEarthDensityInCGS(position)
+        if use_electron_density:
+            density *= self.GetPNERatio(position)
         return density / totalColumnDepth * 1e2 # Convert cm^-1 to m^-1
 
