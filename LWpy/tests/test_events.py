@@ -50,10 +50,15 @@ class EventTests(unittest.TestCase):
             gen.prob_pos(props)
             gen.prob_area(props)
             gen.get_considered_range(props)
+            gen.prob_kinematics(props)
 
         nu_interactions_list = standard_interactions.get_standard_interactions()
         int_model = LWpy.interaction_model(nu_interactions_list, earth_model_params)
         int_model.prob_kinematics(props)
+
+        first_pos, last_pos = gen.get_considered_range(props)
+        phys_pos = int_model.prob_pos(props, first_pos, last_pos)
+        gen_pos = gen.prob_pos(props)
 
 
 if __name__ == '__main__':
