@@ -60,8 +60,6 @@ class EventTests(unittest.TestCase):
         phys_pos = int_model.prob_pos(props, first_pos, last_pos)
         gen_pos = gen.prob_pos(props)
         p_int = int_model.prob_interaction(props, first_pos, last_pos)
-        print(p_int)
-
 
 if __name__ == '__main__':
     unittest.main()
