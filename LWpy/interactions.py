@@ -111,10 +111,8 @@ class interaction_model(interactions, earth):
                 total_xs[sig_mask] += 10.0**(i.total_cross_section(coords[sig_mask, :1]))
         return diff_xs / total_xs
 
-
     def get_total_cross_section(self, events):
         events = np.asarray(events)
-        final_state = [events[s] for s in events.dtype.names if "final_state" in s]
         particle = events["particle"]
         energy = events["energy"]
         coords = np.array([np.log10(energy)]).T
@@ -134,6 +132,35 @@ class interaction_model(interactions, earth):
             e_txs_res[mask] = e_txs
 
         return p_txs_res, e_txs_res
+
+    def get_final_state_cross_section(self, events):
+        events = np.asarray(events)
+        particle = events["particle"]
+        energy = events["energy"]
+        coords = np.array([np.log10(energy)]).T
+        particles = sorted(np.unique(particle))
+        final_state = [events[s] for s in events.dtype.names if "final_type" in s]
+        final_state = np.array(final_state).astype(int)
+        final_state = np.sort(final_state, axis=0)
+        signature = np.concatenate([particle[None,:], final_state]).T
+        unique_signatures = np.unique(signature, axis=0)
+        unique_signatures_t = [tuple(sig.tolist()) for sig in unique_signatures]
+        sig_masks = [np.all(signature == sig[None,:], axis=1) for sig in unique_signatures]
+        sig_interactions = [self.get_interactions(sig[0], sig[1:]) for sig in unique_signatures_t]
+        s_p_txs = [[10.0**i.total_cross_section(coords[s_mask]) for i in s_int if not i.use_electron_density()] for s_int,s_mask,s in zip(sig_interactions,sig_masks,signature)]
+        s_e_txs = [[10.0**i.total_cross_section(coords[s_mask]) for i in s_int if i.use_electron_density()] for s_int,s_mask,s in zip(sig_interactions,sig_masks,signature)]
+
+        s_p_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in s_p_txs]
+        s_e_txs = [(0 if len(txs)==0 else np.sum(txs, axis=0)) for txs in s_e_txs]
+
+        p_txs_res = np.empty(len(events))
+        e_txs_res = np.empty(len(events))
+        for p_txs, e_txs, mask in zip(s_p_txs, s_e_txs, sig_masks):
+            p_txs_res[mask] = p_txs
+            e_txs_res[mask] = e_txs
+
+        return p_txs_res, e_txs_res
+
 
     @staticmethod
     def log_one_m_mexp(val):
@@ -176,7 +203,11 @@ class interaction_model(interactions, earth):
             for segment in event_segments:
                 nucleon_density, electron_density, length = segment
                 nsigma = self.Na * (p_xs * nucleon_density + e_xs * electron_density) * 1e2 # target interactions per meter
-                ss = np.sum(exponentials) + self.log_one_m_mexp(nsigma*length) - np.log(nsigma)
+                if nsigma == 0:
+                    pass
+                    ss = np.sum(exponentials) - np.log(length)
+                else:
+                    ss = np.sum(exponentials) + self.log_one_m_mexp(nsigma*length) - np.log(nsigma)
                 s.append(ss)
                 exponential = -nsigma*length
                 exponentials.append(exponential)
@@ -209,3 +240,68 @@ class interaction_model(interactions, earth):
         exponent = self.Na * (p_txs * total_column_depth_p + e_txs * total_column_depth_e)
         return self.one_m_mexp(exponent)
 
+    def prob_final_state(self, events):
+        x = events["x"]
+        y = events["y"]
+        z = events["z"]
+        position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
+
+        p_density = self.GetEarthDensityInCGS(position)
+        e_density = p_density * self.GetPNERatio(position)
+
+        p_txs, e_txs = self.get_total_cross_section(events)
+        p_fs_txs, e_fs_txs = self.get_final_state_cross_section(events)
+        return (p_fs_txs * p_density + e_fs_txs * e_density) / (p_txs * p_density + e_txs * e_density)
+
+import pathlib
+path = str(pathlib.Path(__file__).parent.absolute())
+path += '/resources/'
+
+def get_standard_interactions():
+    name = "CC"
+    particle = LeptonInjector.Particle.ParticleType.NuE
+    final_state = []
+    final_state.append(LeptonInjector.Particle.ParticleType.EPlus)
+    final_state.append(LeptonInjector.Particle.ParticleType.Hadrons)
+
+    cc_nu_differential_xs = path + "crosssections/csms_differential_v1.0/dsdxdy_nu_CC_iso.fits"
+    cc_nu_total_xs = path + "crosssections/csms_differential_v1.0/sigma_nu_CC_iso.fits"
+    nc_nu_differential_xs = path + "crosssections/csms_differential_v1.0/dsdxdy_nu_NC_iso.fits"
+    nc_nu_total_xs = path + "crosssections/csms_differential_v1.0/sigma_nu_NC_iso.fits"
+    cc_nubar_differential_xs = path + "crosssections/csms_differential_v1.0/dsdxdy_nubar_CC_iso.fits"
+    cc_nubar_total_xs = path + "crosssections/csms_differential_v1.0/sigma_nubar_CC_iso.fits"
+    nc_nubar_differential_xs = path + "crosssections/csms_differential_v1.0/dsdxdy_nubar_NC_iso.fits"
+    nc_nubar_total_xs = path + "crosssections/csms_differential_v1.0/sigma_nubar_NC_iso.fits"
+
+    neutrinos = [
+            LeptonInjector.Particle.ParticleType.NuE,
+            LeptonInjector.Particle.ParticleType.NuMu,
+            LeptonInjector.Particle.ParticleType.NuTau,
+            LeptonInjector.Particle.ParticleType.NuEBar,
+            LeptonInjector.Particle.ParticleType.NuMuBar,
+            LeptonInjector.Particle.ParticleType.NuTauBar,
+            ]
+    charged_leptons = [
+            LeptonInjector.Particle.ParticleType.EMinus,
+            LeptonInjector.Particle.ParticleType.MuMinus,
+            LeptonInjector.Particle.ParticleType.TauMinus,
+            LeptonInjector.Particle.ParticleType.EPlus,
+            LeptonInjector.Particle.ParticleType.MuPlus,
+            LeptonInjector.Particle.ParticleType.TauPlus,
+            ]
+    cc_total_xs = [cc_nu_total_xs]*3 +[cc_nubar_total_xs]*3
+    nc_total_xs = [nc_nu_total_xs]*3 +[nc_nubar_total_xs]*3
+    cc_differential_xs = [cc_nu_differential_xs]*3 +[cc_nubar_differential_xs]*3
+    nc_differential_xs = [nc_nu_differential_xs]*3 +[nc_nubar_differential_xs]*3
+
+    interactions_list = []
+    for nu, lep, cc_txs, cc_xs, nc_txs, nc_xs in zip(neutrinos, charged_leptons, cc_total_xs, cc_differential_xs, nc_total_xs, nc_differential_xs):
+        cc_final_state = [lep, LeptonInjector.Particle.ParticleType.Hadrons]
+        cc = interaction("CC", nu, cc_final_state, cc_xs, cc_txs)
+
+        nc_final_state = [nu, LeptonInjector.Particle.ParticleType.Hadrons]
+        nc = interaction("NC", nu, nc_final_state, nc_xs, nc_txs)
+
+        interactions_list.extend([cc, nc])
+
+    return interactions_list
