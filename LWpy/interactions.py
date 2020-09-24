@@ -238,6 +238,7 @@ class interaction_model(interactions, earth):
         p_txs, e_txs = self.get_total_cross_section(events)
 
         exponent = self.Na * (p_txs * total_column_depth_p + e_txs * total_column_depth_e)
+        #print(total_column_depth_p / events["total_column_depth"])
         return self.one_m_mexp(exponent)
 
     def prob_final_state(self, events):
