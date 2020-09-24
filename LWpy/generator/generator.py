@@ -65,9 +65,11 @@ class generator:
             ).astype(float)
 
     def prob_area(self, events):
+        raise
         return 1.0
 
     def prob_pos(self, events):
+        raise
         return 1.0
 
     def prob_kinematics(self, events):
