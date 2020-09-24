@@ -21,13 +21,13 @@ class interaction:
     def total_cross_section(self, coords, grad=None):
         spline = spline_repo[self.total_xs]
         coords = np.asarray(coords).T
-        v = eval_spline(spline, coords, grad=grad)
+        v = eval_spline(spline, coords, grad=grad) + 4
         return v
 
     def differential_cross_section(self, coords, grad=None):
         spline = spline_repo[self.differential_xs]
         coords = np.asarray(coords).T
-        v = eval_spline(spline, coords, grad=grad)
+        v = eval_spline(spline, coords, grad=grad) + 4
         return v
 
 class interactions:
