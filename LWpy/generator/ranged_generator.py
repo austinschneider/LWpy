@@ -82,10 +82,13 @@ class ranged_generator(generator, earth):
 
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
 
-        totalColumnDepth = self.GetColumnDepthInCGS(first_pos, last_pos, use_electron_density)
+        totalColumnDepth = self.GetColumnDepthInCGS(last_pos, first_pos, use_electron_density)
 
-        density = self.GetEarthDensityInCGS(position)
+        density = self.GetDensityInCGS(position)
+        assert(np.all(density > 0))
         if use_electron_density:
             density *= self.GetPNERatio(position)
-        return density / totalColumnDepth * 1e2 # Convert cm^-1 to m^-1
+
+        res = density / totalColumnDepth * 1e2 # Convert cm^-1 to m^-1
+        return res
 
