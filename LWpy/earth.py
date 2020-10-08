@@ -68,14 +68,14 @@ class earth:
     def GetDensitySegments(self, first_point, last_point):
         return [self.earthModel.GetDensitySegments(fp, lp) for fp,lp in zip(first_point, last_point)]
 
-    def GetEarthDensityInCGS(self, position):
-        return np.array([self.earthModel.GetEarthDensityInCGS(p) for p in position])
+    def GetDensityInCGS(self, position):
+        return np.array([self.earthModel.GetDensityInCGS(p) for p in position])
 
     def GetPNERatio(self, position):
         proton = int(LeptonInjector.Particle.ParticleType.PPlus)
         offsets = []
         for p in position:
-            current_medium = self.earthModel.GetEarthParam(p)
+            current_medium = self.earthModel.GetEarthParam(self.earthModel.GetEarthCoordPosFromDetCoordPos(p))
             offsets.append(self.earthModel.GetPNERatio(current_medium.fMediumType_, proton))
         return np.array(offsets)
 
