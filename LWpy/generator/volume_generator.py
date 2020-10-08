@@ -42,7 +42,7 @@ class volume_generator(generator):
         inside = self.inside_volume(events)
 
         res = np.zeros(len(events))
-        length = self.get_chord_length(events[inside])
+        length = self.chord_length(events[inside])
         # length is in m
         res[inside] = 1.0/length
         return res
@@ -181,8 +181,23 @@ class volume_generator(generator):
         index = np.empty(len(events)).astype(int)
         index[nonzero] = np.arange(len(nonzero_index))
         index[~nonzero] = np.arange(len(zero_index))
-        res = [(LeptonInjector.LI_Position(x1[index[i]], y1[index[i]], z1[index[i]]), LeptonInjector.LI_Position(x2[index[i]], y2[index[i]], z2[index[i]])) if nonzero[i] else (LeptonInjector.LI_Position(x[i], y[i], -np.sign(z[i])*height/2.), LeptonInjector.LI_Position(x[i], y[i], np.sign(z[i])*height/2.)) for i in range(len(events))]
+
+        x = events["x"]
+        y = events["y"]
+        z = events["z"]
+
+        res = []
+        for i in range(len(events)):
+            if nonzero[i]:
+                p1 = LeptonInjector.LI_Position(x1[index[i]], y1[index[i]], z1[index[i]])
+                p2 = LeptonInjector.LI_Position(x2[index[i]], y2[index[i]], z2[index[i]])
+            else:
+                p1 = LeptonInjector.LI_Position(x[i], y[i], -np.sign(z[i])*height/2.)
+                p2 = LeptonInjector.LI_Position(x[i], y[i], np.sign(z[i])*height/2.)
+            res.append((p1, p2))
 
         res = np.array(res).T
-
-        return res[0], res[1]
+        if res.size == 0:
+            return np.array([]), np.array([])
+        else:
+            return res[0], res[1]
