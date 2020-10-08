@@ -177,12 +177,12 @@ class interaction_model(interactions, earth):
         return res
 
     def prob_pos(self, events, first_pos, last_pos):
-        segments = self.GetDensitySegments(first_pos, last_pos)
+        segments = list(reversed(self.GetDensitySegments(last_pos, first_pos)))
 
         p_txs_res, e_txs_res = self.get_total_cross_section(events)
 
-        #total_column_depth_p = self.GetColumnDepthInCGS(first_pos, last_pos, False)
-        #total_column_depth_e = self.GetColumnDepthInCGS(first_pos, last_pos, True)
+        #total_column_depth_p = self.GetColumnDepthInCGS(last_pos, first_pos, False)
+        #total_column_depth_e = self.GetColumnDepthInCGS(last_pos, first_pos, True)
 
         x = events["x"]
         y = events["y"]
@@ -222,7 +222,7 @@ class interaction_model(interactions, earth):
             pos_density = np.exp(np.sum(exponential_i) + exp_i - scipy.special.logsumexp(s))
             #nsigmax = self.Na * p_xs * total_column_depth_p[i] + e_xs * total_column_depth_e[i]
             #nsigma = nsigmax / total_distance
-            #pos_density_2 = np.exp(-nsigma*distance + np.log(nsigma) - one_m_mexp(nsigmax))
+            #pos_density_2 = np.exp(-nsigma*distance + np.log(nsigma) - self.log_one_m_mexp(nsigmax))
             #pos_density_3 = (1.0 - nsigma*distance)/total_distance
             #print(total_distance, pos_density, pos_density_2/pos_density, pos_density_3/pos_density)
             res.append(pos_density)
@@ -247,7 +247,7 @@ class interaction_model(interactions, earth):
         z = events["z"]
         position = np.array([LeptonInjector.LI_Position(xx, yy, zz) for xx,yy,zz in zip(x,y,z)])
 
-        p_density = self.GetEarthDensityInCGS(position)
+        p_density = self.GetDensityInCGS(position)
         e_density = p_density * self.GetPNERatio(position)
 
         p_txs, e_txs = self.get_total_cross_section(events)
