@@ -32,8 +32,6 @@
 6151000 upper_transition      MANTLE      2    7.1089    -5.97159001726573544e-07
 6346600 moho_boundary         MANTLE      2    2.691     1.08679956050855438e-07   # surface of mantle
 6356000 inner_crust           ROCK        1    2.900    
-6371324 rockice_boundary      ROCK        1    2.650      # surface of bed rock, 1.0 x 2.65
-6371324 clearice_boundary     ICE         1    0.0   # 200m below ice surface, 1.005 x 0.917
-6371324 iceair_boundary       ICE         1    0.0   # surface of ice, 0.832 x 0.917
+6371324 rockair_boundary      ROCK        1    2.650      # surface of bed rock, 1.0 x 2.65
 6478000 atmo_radius           AIR         1    0.000811   # 0.673atm x 1.205e-3(g/cm3 for 1atm) 
 
