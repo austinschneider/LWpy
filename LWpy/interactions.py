@@ -89,6 +89,8 @@ class interaction_model(interactions, earth):
 
     def prob_kinematics(self, events):
         events = np.asarray(events)
+        if len(events) == 0:
+            return np.array(events["particle"].shape)
         final_state = [events[s] for s in events.dtype.names if "final_type" in s]
         particle = events["particle"]
         energy = events["energy"]
@@ -113,6 +115,8 @@ class interaction_model(interactions, earth):
 
     def get_total_cross_section(self, events):
         events = np.asarray(events)
+        if len(events) == 0:
+            return np.array(events["particle"].shape), np.array(events["particle"].shape)
         particle = events["particle"]
         energy = events["energy"]
         coords = np.array([np.log10(energy)]).T
@@ -135,6 +139,8 @@ class interaction_model(interactions, earth):
 
     def get_final_state_cross_section(self, events):
         events = np.asarray(events)
+        if len(events) == 0:
+            return np.array(events["particle"].shape), np.array(events["particle"].shape)
         particle = events["particle"]
         energy = events["energy"]
         coords = np.array([np.log10(energy)]).T
@@ -177,6 +183,8 @@ class interaction_model(interactions, earth):
         return res
 
     def prob_pos(self, events, first_pos, last_pos):
+        if len(events) == 0:
+            return np.array(events["particle"].shape)
         segments = list(reversed(self.GetDensitySegments(last_pos, first_pos)))
 
         p_txs_res, e_txs_res = self.get_total_cross_section(events)
@@ -231,6 +239,8 @@ class interaction_model(interactions, earth):
 
     def prob_interaction(self, events, first_pos, last_pos):
         events = np.asarray(events)
+        if len(events) == 0:
+            return np.array(events["particle"].shape)
 
         total_column_depth_p = self.GetColumnDepthInCGS(first_pos, last_pos, False)
         total_column_depth_e = self.GetColumnDepthInCGS(first_pos, last_pos, True)
@@ -242,6 +252,8 @@ class interaction_model(interactions, earth):
         return self.one_m_mexp(exponent)
 
     def prob_final_state(self, events):
+        if len(events) == 0:
+            return np.array(events["particle"].shape)
         x = events["x"]
         y = events["y"]
         z = events["z"]
