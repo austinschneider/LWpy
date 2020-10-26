@@ -123,6 +123,7 @@ class read_stream:
 
     def read_ranged_block(self, version=1):
         d = self.read_volume_block(version=version)
+        d = dict(d)
         v = d["height"]
         del d["height"]
         d["length"] = v
@@ -273,6 +274,7 @@ class write_stream:
         return n
 
     def write_ranged_block(self, block, version=1):
+        block = dict(block)
         v = block["length"]
         del block["length"]
         block["height"] = v
