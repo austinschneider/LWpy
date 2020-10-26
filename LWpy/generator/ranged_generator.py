@@ -6,8 +6,8 @@ import EarthModelService
 import LeptonInjector
 
 class ranged_generator(generator, earth):
-    def __init__(self, block, earth_model_params=None):
-        generator.__init__(self, block)
+    def __init__(self, block, earth_model_params=None, spline_dir='./'):
+        generator.__init__(self, block, spline_dir=spline_dir)
         earth.__init__(self, earth_model_params)
 
     def prob_area(self, events):

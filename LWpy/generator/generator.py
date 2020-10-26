@@ -1,9 +1,10 @@
 from ..spline import spline_repo, eval_spline
+import os.path
 import numpy as np
 import photospline
 
 class generator:
-    def __init__(self, block):
+    def __init__(self, block, spline_dir='./'):
         block_name, block_version, block_data = block
         self.block_type = block_name
         self.block_version = block_version
@@ -12,6 +13,7 @@ class generator:
         self.differential_xs = self.block["differentialCrossSection"]
         self.Na = 6.022140857e+23
         self.earth_model = None
+        self.spline_dir = spline_dir
 
     def prob_stat(self, event):
         return self.block["events"]
@@ -78,8 +80,8 @@ class generator:
         x = events["bjorken_x"]
         y = events["bjorken_y"]
         coords = np.array([np.log10(energy), np.log10(x), np.log10(y)])
-        diff_xs = 10.0**eval_spline(spline_repo[self.differential_xs], coords)
-        total_xs = 10.0**eval_spline(spline_repo[self.total_xs], coords[:1])
+        diff_xs = 10.0**eval_spline(spline_repo[os.path.join(self.spline_dir, self.differential_xs)], coords)
+        total_xs = 10.0**eval_spline(spline_repo[os.path.join(self.spline_dir, self.total_xs)], coords[:1])
         return diff_xs / total_xs
 
     def number_of_targets(self, events):

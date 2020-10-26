@@ -244,8 +244,8 @@ class write_stream:
         radius = block["radius"]
         height = block["height"]
 
-        txs_data = open(totalCrossSection, 'rb').read()
-        xs_data = open(differentialCrossSection, 'rb').read()
+        txs_data = open(os.path.join(self.spline_dir, totalCrossSection), 'rb').read()
+        xs_data = open(os.path.join(self.spline_dir, differentialCrossSection), 'rb').read()
         txs_size = len(txs_data)
         xs_size = len(xs_data)
 

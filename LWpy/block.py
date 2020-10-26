@@ -25,12 +25,16 @@ def pairwise_merge(blocks_0, blocks_1, equal, merge):
     return b_final + b0_final + b1_final
 
 def block_merge(block_0, block_1):
-    s0, d0 = block_0
-    s1, d1 = block_1
+    s0, v0, d0 = block_0
+    s1, v0, d1 = block_1
+    if s0 == "VolumeInjectionConfiguration" or s0 == "RangedInjectionConfiguration":
+        pass
+    elif s0 == "EnumDef":
+        return s0, v0, d0
     d = dict(d0)
     if "events" in d:
         d.update({"events": d0["events"]+d1["events"]})
-    return s0, d
+    return s0, v0, d
 
 def block_equal(block_0, block_1):
     s0, v0, d0 = block_0
@@ -46,11 +50,13 @@ def block_equal(block_0, block_1):
         name1, d1 = d1
         if name0 != name1:
             return False
-    k_d0 = sorted(list(d0.keys()))
-    k_d1 = sorted(list(d1.keys()))
+    k_d0 = sorted([k for k in d0.keys() if k != 'events'])
+    k_d1 = sorted([k for k in d1.keys() if k != 'events'])
     if len(k_d0) != len(k_d1):
         return False
     keys = np.unique(k_d0 + k_d1)
+    if len(keys) != len(k_d0):
+        return False
     return functools.reduce(lambda a,b: a and b, [d0[k]==d1[k] for k in keys])
 
 def merge_blocks(blocks):
