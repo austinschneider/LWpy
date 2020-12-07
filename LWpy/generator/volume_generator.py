@@ -4,8 +4,8 @@ import EarthModelService
 import LeptonInjector
 
 class volume_generator(generator):
-    def __init__(self, block):
-        generator.__init__(self, block)
+    def __init__(self, block, spline_dir='./'):
+        generator.__init__(self, block, spline_dir=spline_dir)
 
     def inside_volume(self, events):
         events = np.asarray(events)
